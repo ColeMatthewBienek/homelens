@@ -227,7 +227,7 @@ Five ship — same data, different aesthetics:
 | `doctor` | ✅ |
 | `agent-context` | ✅ JSON capability manifest |
 | `report` | ❌ deferred — re-run `search` with `--theme X` to re-render for now |
-| Standalone enrichment CLIs (`census-pp-cli` etc.) | ❌ deferred — functionality lives inline in HomeLens |
+| Standalone enrichment CLIs | ✅ — `census-pp-cli`, `city-data-pp-cli`, `osm-amenities-pp-cli` ship as printing-press library entries. HomeLens prefers them when on PATH and falls back to inline when not. |
 
 ## Architecture
 
@@ -268,11 +268,23 @@ internal/
 ## Data sources & attribution
 
 - **Listings** — Redfin Stingray API (public, keyless, rate-limited)
-- **ZIP demographics** — [city-data.com](https://www.city-data.com) (HTML scrape)
-- **Census tract & FIPS** — [US Census Bureau Geocoder](https://geocoding.geo.census.gov) (keyless)
-- **Tract demographics** — [US Census Bureau Data API](https://www.census.gov/data/developers.html) (free key)
-- **Amenities & walkability** — [OpenStreetMap Overpass API](https://overpass-api.de) (keyless)
+- **ZIP demographics** — [city-data.com](https://www.city-data.com) (HTML scrape, via `city-data-pp-cli` if installed)
+- **Census tract & FIPS** — [US Census Bureau Geocoder](https://geocoding.geo.census.gov) (keyless, via `census-pp-cli` if installed)
+- **Tract demographics** — [US Census Bureau Data API](https://www.census.gov/data/developers.html) (free key, via `census-pp-cli`)
+- **Amenities & walkability** — [OpenStreetMap Overpass API](https://overpass-api.de) (keyless, via `osm-amenities-pp-cli` if installed)
 - **Maps** — [Leaflet](https://leafletjs.com) + [OpenStreetMap tiles](https://www.openstreetmap.org)
+
+## Printing-press companions
+
+HomeLens calls out to three companion CLIs from the [printing-press](https://github.com/mvanhorn/cli-printing-press) library. Installing them lets HomeLens (and any other tool you build) share one cached enrichment layer:
+
+| CLI | What it does | Auth |
+|---|---|---|
+| `census-pp-cli` | US Census Geocoder + ACS 5-year demographics | free key for ACS |
+| `city-data-pp-cli` | city-data.com ZIP/city scraper | none |
+| `osm-amenities-pp-cli` | OpenStreetMap amenity counts + walkability composite | none |
+
+Build each from `~/printing-press/library/<name>/`. HomeLens auto-detects them on PATH and delegates; if they're missing, HomeLens uses inline equivalents (zero install friction for standalone use).
 
 ## License
 

@@ -6,9 +6,11 @@
 package citydata
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -33,7 +35,17 @@ type ZipProfile struct {
 // FetchZip pulls the city-data.com ZIP page and parses the demographic stats.
 // On parse failure for individual fields, the field stays zero — callers
 // should treat zero as "unknown" rather than "actually zero".
+//
+// If city-data-pp-cli is on PATH, HomeLens delegates to it.
 func FetchZip(zip string) (*ZipProfile, error) {
+	if path, err := exec.LookPath("city-data-pp-cli"); err == nil {
+		if out, err := exec.Command(path, "zip", zip).Output(); err == nil {
+			var p ZipProfile
+			if err := json.Unmarshal(out, &p); err == nil {
+				return &p, nil
+			}
+		}
+	}
 	u := "https://www.city-data.com/zips/" + zip + ".html"
 	body, err := fetch(u)
 	if err != nil {

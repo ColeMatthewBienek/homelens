@@ -10,6 +10,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -28,9 +30,25 @@ type Amenities struct {
 }
 
 // Fetch counts amenities within radiusMeters of (lat, lng).
+//
+// If osm-amenities-pp-cli is on PATH, HomeLens delegates to it.
 func Fetch(lat, lng float64, radiusMeters int) (*Amenities, error) {
 	if radiusMeters == 0 {
 		radiusMeters = 1609 // ~1 mile
+	}
+	if path, err := exec.LookPath("osm-amenities-pp-cli"); err == nil {
+		args := []string{
+			"amenities",
+			strconv.FormatFloat(lat, 'f', -1, 64),
+			strconv.FormatFloat(lng, 'f', -1, 64),
+			"--radius", strconv.Itoa(radiusMeters) + "m",
+		}
+		if out, err := exec.Command(path, args...).Output(); err == nil {
+			var a Amenities
+			if err := json.Unmarshal(out, &a); err == nil {
+				return &a, nil
+			}
+		}
 	}
 	q := fmt.Sprintf(`[out:json][timeout:25];
 (
