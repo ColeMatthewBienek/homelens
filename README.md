@@ -67,26 +67,37 @@ Tract-level demographics need a free [Census API key](https://api.census.gov/dat
 
 ## Themes
 
-v0 ships **bloom** (the lovable mobile-first one). Roadmap themes: modern, classic, minimal, dark.
+Five themes ship:
+
+- **bloom** — pink/lavender, mobile-first, friendly (default)
+- **modern** — navy + gold professional
+- **classic** — Georgia serif brochure
+- **minimal** — B&W Tufte-style
+- **dark** — slate + cyan, OLED-friendly
+
+```bash
+homelens-pp-cli search "Vancouver, WA" --theme dark
+```
 
 ## Roadmap
 
-Status as of v0.1:
-
-| Feature              | Status      | Notes |
-|----------------------|-------------|-------|
-| `search` w/ Vancouver | ✅ working | reproduces 16-listing baseline |
-| bloom theme           | ✅ working   | self-contained HTML |
-| Config + profiles    | ✅ working   | 4 built-in profiles |
-| Saved searches       | ✅ working   | TOML at `~/.config/homelens/searches/` |
-| MCP server           | 🟡 partial | initialize + list_tools work; tool calls shell out to CLI |
-| `init` wizard        | 🟡 minimal  | writes defaults; no interactive prompts yet |
-| `watch` + diff       | ❌ stub      | next session |
-| `compare`            | ❌ stub      | next session |
-| `listing` deep dive  | ❌ stub      | next session |
-| `share` (gist)       | ❌ stub      | next session |
-| PDF / markdown out   | ❌ stub      | next session — needs chromedp |
-| Other 4 themes       | ❌ stub      | next session |
+| Feature                  | Status   | Notes |
+|--------------------------|----------|-------|
+| `search`                 | ✅       | 5 themes, `--map`, `--md`, pagination |
+| 5 themes                 | ✅       | bloom · modern · classic · minimal · dark |
+| Interactive map          | ✅       | `--map` flag, Leaflet via CDN |
+| Markdown output          | ✅       | `--md` flag |
+| Config + profiles        | ✅       | 4 built-in profiles |
+| Saved searches           | ✅       | TOML under `~/.config/homelens/searches/` |
+| `watch` + diff           | ✅       | snapshot history, exits 9 on changes (cron-friendly) |
+| `compare`                | ✅       | side-by-side two-city report |
+| `listing` deep dive      | 🟡 basic | metadata; schools/OSM/commute land in v0.3 |
+| `share` (gist)           | ✅       | wraps `gh gist create` |
+| `init` wizard            | ✅       | interactive prompts |
+| MCP server               | 🟡 partial | initialize + list_tools work; tool calls shell out to CLI |
+| PDF export               | ❌ v0.3  | needs chromedp |
+| Inline Leaflet (offline) | ❌ v0.3  | currently CDN |
+| Dependency CLIs (census, city-data, osm) | ❌ v0.3 | enrichment inline for now |
 | Interactive map      | ❌ stub      | next session — Leaflet inline |
 
 ## Architecture
