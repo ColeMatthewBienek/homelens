@@ -39,29 +39,22 @@ type School struct {
 	Rating float64 `json:"rating"`
 }
 
-// Fetch pulls full listing detail from Redfin given a /<state>/<city>/<addr>/home/<id> URL.
+// Fetch pulls full listing detail from Redfin given a /<state>/<city>/<addr>/home/<id>
+// URL or full https URL. Scrapes the public HTML page for lat/lng/description because
+// the Stingray detail API requires session cookies; the HTML page is reliably anonymous.
 func Fetch(redfinURL string) (*Detail, error) {
-	// Extract property ID from URL
-	re := regexp.MustCompile(`/home/(\d+)`)
-	m := re.FindStringSubmatch(redfinURL)
-	if len(m) < 2 {
-		return nil, fmt.Errorf("could not extract property ID from %s", redfinURL)
-	}
-	propID := m[1]
-
-	u := fmt.Sprintf("https://www.redfin.com/stingray/api/home/details/initialInfo?path=%s&listingVersion=1&accessLevel=1", redfinURL)
-	if !strings.Contains(u, "redfin.com") || strings.HasPrefix(redfinURL, "/") {
-		// Already a path
-		u = fmt.Sprintf("https://www.redfin.com/stingray/api/home/details/initialInfo?path=%s&listingVersion=1&accessLevel=1&propertyId=%s", redfinURL, propID)
+	// Normalize to a full URL
+	full := redfinURL
+	if strings.HasPrefix(full, "/") {
+		full = "https://www.redfin.com" + full
 	}
 
 	client := &http.Client{Timeout: 30 * time.Second}
-	req, err := http.NewRequest("GET", u, nil)
+	req, err := http.NewRequest("GET", full, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-	req.Header.Set("Referer", "https://www.redfin.com/")
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -71,26 +64,40 @@ func Fetch(redfinURL string) (*Detail, error) {
 	if err != nil {
 		return nil, err
 	}
-	body = []byte(strings.TrimPrefix(string(body), "{}&&"))
+	html := string(body)
 
-	var raw map[string]any
-	if err := json.Unmarshal(body, &raw); err != nil {
-		return nil, fmt.Errorf("listing detail parse: %w", err)
+	d := &Detail{URL: redfinURL}
+
+	// lat/lng appear in inlined JSON like "latitude":45.6543,"longitude":-122.6543
+	reLat := regexp.MustCompile(`"latitude"\s*:\s*([\-\d.]+)`)
+	reLng := regexp.MustCompile(`"longitude"\s*:\s*([\-\d.]+)`)
+	if m := reLat.FindStringSubmatch(html); len(m) > 1 {
+		fmt.Sscanf(m[1], "%f", &d.Latitude)
+	}
+	if m := reLng.FindStringSubmatch(html); len(m) > 1 {
+		fmt.Sscanf(m[1], "%f", &d.Longitude)
+	}
+	reYear := regexp.MustCompile(`"yearBuilt"[^}]*?"value"\s*:\s*(\d{4})`)
+	if m := reYear.FindStringSubmatch(html); len(m) > 1 {
+		fmt.Sscanf(m[1], "%d", &d.YearBuilt)
+	}
+	reLot := regexp.MustCompile(`"lotSize"[^}]*?"value"\s*:\s*(\d+)`)
+	if m := reLot.FindStringSubmatch(html); len(m) > 1 {
+		fmt.Sscanf(m[1], "%d", &d.LotSize)
+	}
+	// Public remarks / description (og:description is a clean source)
+	reDesc := regexp.MustCompile(`<meta\s+property="og:description"\s+content="([^"]+)"`)
+	if m := reDesc.FindStringSubmatch(html); len(m) > 1 {
+		// HTML-decode common entities
+		d.Description = strings.NewReplacer("&quot;", `"`, "&amp;", "&", "&lt;", "<", "&gt;", ">", "&#39;", "'").Replace(m[1])
 	}
 
-	d := &Detail{URL: redfinURL, Raw: raw}
-	// Best-effort extraction — Redfin's payload shape is nested and noisy
-	if payload, ok := raw["payload"].(map[string]any); ok {
-		if pdb, ok := payload["publicRecordsInfo"].(map[string]any); ok {
-			if ai, ok := pdb["allInfo"].(map[string]any); ok {
-				d.YearBuilt = pickInt(ai, "yearBuilt")
-				d.LotSize = pickInt(ai, "lotSize")
-			}
-		}
-		if li, ok := payload["listingInfo"].(map[string]any); ok {
-			d.Description = pickString(li, "publicRemarks")
-		}
+	// Try the JSON detail API as a best-effort enrichment (often blocked, that's OK)
+	rePid := regexp.MustCompile(`/home/(\d+)`)
+	if m := rePid.FindStringSubmatch(redfinURL); len(m) > 1 {
+		_ = m // could call stingray/api/home/details if logged in; skip for now
 	}
+	_ = json.Unmarshal
 	return d, nil
 }
 

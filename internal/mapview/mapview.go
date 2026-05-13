@@ -1,34 +1,40 @@
 // Package mapview generates an embeddable Leaflet HTML snippet showing
-// each listing as a pin colored by livability score. Uses Leaflet via CDN
-// for compactness — pass --inline-map at the CLI layer if you need a fully
-// offline single-file report.
+// each listing as a pin colored by livability score.
+//
+// Two modes:
+//   - CDN (default): tiny HTML, requires internet to load Leaflet from unpkg
+//   - Inline: ~160KB heavier, but fully offline — pass inline=true to Build
 package mapview
 
 import (
 	"bytes"
+	"embed"
 	"encoding/json"
-	"fmt"
 	"html/template"
 
 	"github.com/ColeMatthewBienek/homelens/internal/redfin"
 )
 
+//go:embed assets/leaflet.css assets/leaflet.js
+var assets embed.FS
+
 type pin struct {
-	Lat       float64 `json:"lat"`
-	Lng       float64 `json:"lng"`
-	Price     int     `json:"price"`
-	Beds      float64 `json:"beds"`
-	Baths     float64 `json:"baths"`
-	SqFt      int     `json:"sqft"`
-	Addr      string  `json:"addr"`
-	URL       string  `json:"url"`
-	Photo     string  `json:"photo,omitempty"`
-	Live      int     `json:"live"`
+	Lat   float64 `json:"lat"`
+	Lng   float64 `json:"lng"`
+	Price int     `json:"price"`
+	Beds  float64 `json:"beds"`
+	Baths float64 `json:"baths"`
+	SqFt  int     `json:"sqft"`
+	Addr  string  `json:"addr"`
+	URL   string  `json:"url"`
+	Photo string  `json:"photo,omitempty"`
+	Live  int     `json:"live"`
 }
 
-const tmpl = `<div id="hl-map" style="height:480px;border-radius:12px;overflow:hidden;margin-bottom:1.5rem;border:1px solid #e2e8f0"></div>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+const cdnHeader = `<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>`
+
+const bodyTmpl = `<div id="hl-map" style="height:480px;border-radius:12px;overflow:hidden;margin-bottom:1.5rem;border:1px solid #e2e8f0"></div>
 <script>
 (function(){
   var pins = {{.Pins}};
@@ -49,6 +55,14 @@ const tmpl = `<div id="hl-map" style="height:480px;border-radius:12px;overflow:h
 </script>`
 
 func Build(homes []redfin.Home, livability map[string]int) (template.HTML, error) {
+	return build(homes, livability, false)
+}
+
+func BuildInline(homes []redfin.Home, livability map[string]int) (template.HTML, error) {
+	return build(homes, livability, true)
+}
+
+func build(homes []redfin.Home, livability map[string]int, inline bool) (template.HTML, error) {
 	pins := make([]pin, 0, len(homes))
 	for _, h := range homes {
 		pins = append(pins, pin{
@@ -68,14 +82,22 @@ func Build(homes []redfin.Home, livability map[string]int) (template.HTML, error
 	if err != nil {
 		return "", err
 	}
-	t, err := template.New("map").Parse(tmpl)
+	var header string
+	if inline {
+		css, _ := assets.ReadFile("assets/leaflet.css")
+		js, _ := assets.ReadFile("assets/leaflet.js")
+		header = "<style>" + string(css) + "</style><script>" + string(js) + "</script>"
+	} else {
+		header = cdnHeader
+	}
+	t, err := template.New("map").Parse(bodyTmpl)
 	if err != nil {
 		return "", err
 	}
 	var buf bytes.Buffer
+	buf.WriteString(header)
 	if err := t.Execute(&buf, map[string]any{"Pins": template.JS(pinJSON)}); err != nil {
 		return "", err
 	}
-	_ = fmt.Sprintf // keep import
 	return template.HTML(buf.String()), nil
 }

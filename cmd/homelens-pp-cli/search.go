@@ -15,6 +15,7 @@ import (
 	"github.com/ColeMatthewBienek/homelens/internal/mapview"
 	htmlrender "github.com/ColeMatthewBienek/homelens/internal/render/html"
 	mdrender "github.com/ColeMatthewBienek/homelens/internal/render/md"
+	pdfrender "github.com/ColeMatthewBienek/homelens/internal/render/pdf"
 	"github.com/ColeMatthewBienek/homelens/internal/redfin"
 	"github.com/ColeMatthewBienek/homelens/internal/score"
 	"github.com/ColeMatthewBienek/homelens/internal/store"
@@ -49,7 +50,9 @@ func searchCmd() *cobra.Command {
 		flagJSON      bool
 		flagNoEnrich  bool
 		flagMap       bool
+		flagInlineMap bool
 		flagMarkdown  bool
+		flagPDF       bool
 	)
 	cmd := &cobra.Command{
 		Use:   "search [city-state | saved-search-name]",
@@ -249,8 +252,15 @@ func searchCmd() *cobra.Command {
 				}, f)
 			} else {
 				var mapHTML template.HTML
-				if flagMap {
-					if mh, mErr := mapview.Build(homes, livability); mErr == nil {
+				if flagMap || flagInlineMap {
+					var mh template.HTML
+					var mErr error
+					if flagInlineMap {
+						mh, mErr = mapview.BuildInline(homes, livability)
+					} else {
+						mh, mErr = mapview.Build(homes, livability)
+					}
+					if mErr == nil {
 						mapHTML = mh
 					}
 				}
@@ -268,6 +278,18 @@ func searchCmd() *cobra.Command {
 				return err
 			}
 			fmt.Fprintf(os.Stderr, "✓ Wrote %s\n", out)
+
+			if flagPDF && !flagMarkdown {
+				pdfPath := strings.TrimSuffix(out, ".html") + ".pdf"
+				fmt.Fprintf(os.Stderr, "Rendering PDF via headless Chrome ...\n")
+				if err := pdfrender.FromHTMLFile(out, pdfPath); err != nil {
+					fmt.Fprintf(os.Stderr, "PDF render failed: %v\n", err)
+				} else {
+					fmt.Fprintf(os.Stderr, "✓ Wrote %s\n", pdfPath)
+					fmt.Println(pdfPath)
+					return nil
+				}
+			}
 			fmt.Println(out) // stdout = the path, for agents to consume
 			return nil
 		},
@@ -287,8 +309,10 @@ func searchCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&flagAll, "all", false, "return all results, no pagination")
 	cmd.Flags().BoolVar(&flagJSON, "json", false, "emit results as JSON to stdout (no HTML)")
 	cmd.Flags().BoolVar(&flagNoEnrich, "no-enrich", false, "skip city-data enrichment (faster, no livability scores)")
-	cmd.Flags().BoolVar(&flagMap, "map", false, "embed an interactive Leaflet map of listings")
+	cmd.Flags().BoolVar(&flagMap, "map", false, "embed Leaflet map (loaded from unpkg CDN)")
+	cmd.Flags().BoolVar(&flagInlineMap, "inline-map", false, "embed Leaflet map with inlined JS+CSS (fully offline, +160KB)")
 	cmd.Flags().BoolVar(&flagMarkdown, "md", false, "emit Markdown instead of HTML")
+	cmd.Flags().BoolVar(&flagPDF, "pdf", false, "render output to PDF via headless Chrome (requires Chrome/Edge installed)")
 	return cmd
 }
 

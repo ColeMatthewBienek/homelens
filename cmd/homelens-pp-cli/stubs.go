@@ -9,10 +9,12 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ColeMatthewBienek/homelens/internal/census"
 	"github.com/ColeMatthewBienek/homelens/internal/compare"
 	"github.com/ColeMatthewBienek/homelens/internal/config"
 	"github.com/ColeMatthewBienek/homelens/internal/diff"
 	"github.com/ColeMatthewBienek/homelens/internal/listing"
+	"github.com/ColeMatthewBienek/homelens/internal/osm"
 	"github.com/ColeMatthewBienek/homelens/internal/share"
 	"github.com/ColeMatthewBienek/homelens/internal/store"
 )
@@ -246,33 +248,63 @@ func compareCmd() *cobra.Command {
 }
 
 func listingCmd() *cobra.Command {
-	return &cobra.Command{
+	var out string
+	var noAmenities bool
+	cmd := &cobra.Command{
 		Use:   "listing <redfin-url>",
-		Short: "Single-listing deep dive",
+		Short: "Single-listing deep dive (census tract + OSM amenities + walkability)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			url := args[0]
+			fmt.Fprintln(os.Stderr, "Fetching Redfin listing page ...")
 			d, err := listing.Fetch(url)
 			if err != nil {
 				return err
 			}
-			fmt.Println("URL:", d.URL)
-			if d.YearBuilt > 0 {
-				fmt.Println("Year built:", d.YearBuilt)
+
+			var tract *census.GeocodeResult
+			if d.Latitude != 0 && d.Longitude != 0 {
+				fmt.Fprintln(os.Stderr, "Resolving census tract ...")
+				if t, err := census.Geocode(d.Latitude, d.Longitude); err == nil {
+					tract = t
+				} else {
+					fmt.Fprintln(os.Stderr, "  tract lookup failed:", err)
+				}
+			} else {
+				fmt.Fprintln(os.Stderr, "  no lat/lng — skipping tract & amenities")
 			}
-			if d.LotSize > 0 {
-				fmt.Println("Lot size (sqft):", d.LotSize)
+
+			var amens *osm.Amenities
+			if !noAmenities && d.Latitude != 0 && d.Longitude != 0 {
+				fmt.Fprintln(os.Stderr, "Querying OSM Overpass for nearby amenities (1 mi) ...")
+				if a, err := osm.Fetch(d.Latitude, d.Longitude, 1609); err == nil {
+					amens = a
+				} else {
+					fmt.Fprintln(os.Stderr, "  OSM query failed:", err)
+				}
 			}
-			if d.Description != "" {
-				fmt.Println()
-				fmt.Println("Description:")
-				fmt.Println(d.Description)
+
+			if out == "" {
+				out = "homelens-listing.html"
 			}
-			fmt.Println()
-			fmt.Println("Note: full HTML deep-dive (schools, census tract, OSM amenities, commute) lands in v0.3.")
+			f, err := os.Create(out)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			if err := listing.RenderDeepDive(listing.DeepDive{
+				URL: url, Detail: d, Tract: tract, Amenities: amens,
+			}, f); err != nil {
+				return err
+			}
+			fmt.Fprintf(os.Stderr, "✓ Wrote %s\n", out)
+			fmt.Println(out)
 			return nil
 		},
 	}
+	cmd.Flags().StringVar(&out, "out", "", "output HTML path")
+	cmd.Flags().BoolVar(&noAmenities, "no-amenities", false, "skip OSM amenity lookup")
+	return cmd
 }
 
 func reportCmd() *cobra.Command {

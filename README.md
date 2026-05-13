@@ -83,21 +83,21 @@ homelens-pp-cli search "Vancouver, WA" --theme dark
 
 | Feature                  | Status   | Notes |
 |--------------------------|----------|-------|
-| `search`                 | ✅       | 5 themes, `--map`, `--md`, pagination |
+| `search`                 | ✅       | 5 themes, `--map`, `--inline-map`, `--md`, `--pdf`, pagination |
 | 5 themes                 | ✅       | bloom · modern · classic · minimal · dark |
-| Interactive map          | ✅       | `--map` flag, Leaflet via CDN |
-| Markdown output          | ✅       | `--md` flag |
+| Interactive map (CDN)    | ✅       | `--map` |
+| Inline map (fully offline) | ✅     | `--inline-map` — embeds Leaflet JS+CSS (~160KB) |
+| Markdown output          | ✅       | `--md` |
+| PDF export               | ✅       | `--pdf` — via chromedp / headless Chrome |
 | Config + profiles        | ✅       | 4 built-in profiles |
 | Saved searches           | ✅       | TOML under `~/.config/homelens/searches/` |
 | `watch` + diff           | ✅       | snapshot history, exits 9 on changes (cron-friendly) |
 | `compare`                | ✅       | side-by-side two-city report |
-| `listing` deep dive      | 🟡 basic | metadata; schools/OSM/commute land in v0.3 |
+| `listing` deep dive      | ✅       | full HTML: census tract + OSM amenities + walkability score |
 | `share` (gist)           | ✅       | wraps `gh gist create` |
 | `init` wizard            | ✅       | interactive prompts |
-| MCP server               | 🟡 partial | initialize + list_tools work; tool calls shell out to CLI |
-| PDF export               | ❌ v0.3  | needs chromedp |
-| Inline Leaflet (offline) | ❌ v0.3  | currently CDN |
-| Dependency CLIs (census, city-data, osm) | ❌ v0.3 | enrichment inline for now |
+| MCP server (direct)      | ✅       | 4 tools: search, list_searches, listing, render_html — no shell-out |
+| Dependency CLIs (census, city-data, osm) | ❌ deferred | enrichment lives inline in HomeLens; can be extracted to printing-press in future |
 | Interactive map      | ❌ stub      | next session — Leaflet inline |
 
 ## Architecture
