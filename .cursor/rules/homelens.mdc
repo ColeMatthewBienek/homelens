@@ -1,36 +1,43 @@
 ---
-description: Property search via HomeLens CLI
+description: Property search & neighborhood enrichment via homelens-pp-cli
 globs:
 alwaysApply: false
 ---
 
 # HomeLens
 
-When the user asks about homes for sale, real estate, or property searches in a US city, use `homelens-pp-cli`.
+When the user asks about homes for sale, real estate, or property values in a US city, shell out to `homelens-pp-cli`.
 
-## Usage
+## Triggers
+
+"show me properties in <city>", "homes for sale", "real estate in", "find me a 3-bed under $X", "compare <A> and <B>", "watch <name>", "deep dive on this listing: <redfin URL>", "next 25", "more".
+
+When the user gives only a city, invoke directly with their config defaults — don't ask for filters.
+
+## Common invocations
 
 ```bash
 homelens-pp-cli search "Austin, TX"
 homelens-pp-cli search "Boise, ID" --max-price 500000 --min-sqft 1800 --types house,condo
-homelens-pp-cli search my-saved-name
+homelens-pp-cli search "Vancouver, WA" --slug city/18823/WA/Vancouver
+homelens-pp-cli save my-austin "Austin, TX" --max-price 600000
+homelens-pp-cli watch my-austin                  # exits 9 if changes
+homelens-pp-cli compare "Austin, TX" "Boise, ID"
+homelens-pp-cli listing https://www.redfin.com/...
 homelens-pp-cli profile use first-home
+homelens-pp-cli share <html>
 ```
 
-## Output
+Flags on `search`: `--map` · `--inline-map` · `--md` · `--pdf` · `--theme bloom|modern|classic|minimal|dark` · `--profile first-home|investment|downsize|luxury`
 
-- stdout: HTML report file path
-- stderr: progress
-- Exit codes: 0 ok, 2 user error, 3 upstream, 4 rate-limited, 5 auth missing, 7 no results, 9 changes
+## Output contract
 
-## Triggers
+stdout = output file path (one line). stderr = progress. Exit codes: `0` ok · `2` user · `3` upstream · `4` rate-limited · `5` auth · `7` no results · `9` changes detected.
 
-"show me properties in X", "homes for sale", "real estate in", "compare cities", "next 25".
+## API keys
 
-## Stubs in v0
-
-`watch`, `compare`, `listing`, `share`, `report` — print informational stubs; tell user these land in v0.2. For `share`, suggest `gh gist create --public <file>`.
+None required. Optional Census key (free) for tract-level deep-dive; `homelens-pp-cli init` walks setup.
 
 ## Defaults
 
-Built-in: min-sqft=1500, max-price=$800K, 2+bd/2+ba, house+condo+townhouse, bloom theme. User config at `~/.config/homelens/config.toml`.
+`min-sqft=1500`, `max-price=$800K`, `2+bd/2+ba`, `house+condo+townhouse`. Themes: bloom, modern, classic, minimal, dark.

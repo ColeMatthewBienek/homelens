@@ -1,78 +1,117 @@
-# HomeLens prompting source
+# HomeLens — canonical agent prompt source
 
-This is the canonical agent prompt for HomeLens. The four per-agent skill files (Claude Code, Codex, Cursor, Gemini) are generated from this single source via `scripts/build-skills.go`.
+This is the source of truth for the four per-agent skill files (Claude Code, Codex/Cline/Aider, Cursor, Gemini). When updating skills, edit this file first; the other four mirror it.
 
 ## What HomeLens is
 
-A property search + neighborhood enrichment tool. Given a US city, it pulls live Redfin listings, enriches each ZIP with US Census + city-data.com demographics, computes a within-search Livability score, and renders a shareable HTML report.
+Agent-agnostic property search + neighborhood enrichment tool. Given a US city, pulls live Redfin listings, layers in US Census + city-data.com demographics + OSM walkability, computes a within-search Livability score, and renders a single-file HTML report.
+
+CLI binary: `homelens-pp-cli` · MCP server: `homelens-pp-mcp` (4 typed tools)
 
 ## When to invoke
 
-- User says "show me properties in <city>"
-- User asks "what homes are for sale in <city> under $X?"
-- User asks about a neighborhood's demographics, walkability, or livability in the context of a home search
-- User says "next 25" or "more results" — treat as continuation of prior search
-- User mentions comparing two cities for home prices/livability
-- User asks to deep-dive on a specific Redfin listing URL
+Match the user's intent, not exact phrasing. Common triggers:
+
+- "show me properties in <city>" / "homes for sale in <city>"
+- "real estate in <city>", "what's for sale in <city> under $X"
+- "find me a 3-bed under $600K in Austin"
+- "compare <city A> and <city B>"
+- "save this search as <name>"
+- "watch <saved-name>" / "any new listings since last time?"
+- "deep dive on this listing: <redfin URL>"
+- "share this report" (uploads as Gist via `gh`)
+- "next 25", "more results", "page 2" — continuation of prior search
+
+If the user gives only a city, invoke directly with config defaults — don't ask clarifying questions first.
 
 ## How to invoke
 
-The CLI is `homelens-pp-cli`. Always use absolute filter values from the user when they specify; otherwise the CLI applies the user's config defaults from `~/.config/homelens/config.toml`.
-
-### Common one-liners
-
 ```bash
-# Default search
+# Default search using user's ~/.config/homelens/config.toml
 homelens-pp-cli search "Austin, TX"
 
-# Specific filters
+# Specific filters override defaults
 homelens-pp-cli search "Boise, ID" --max-price 500000 --min-sqft 1800 --types house,condo
 
-# Apply a profile
+# Skip city resolution (faster) if you know the Redfin slug
+homelens-pp-cli search "Vancouver, WA" --slug city/18823/WA/Vancouver
+
+# Saved searches
+homelens-pp-cli save my-austin "Austin, TX" --max-price 600000
+homelens-pp-cli search my-austin                # re-run
+
+# Compare two cities
+homelens-pp-cli compare "Austin, TX" "Boise, ID"
+
+# Watch for new listings (exits 9 if anything changed)
+homelens-pp-cli watch my-austin
+
+# Single-listing deep-dive (census tract + OSM walkability + amenity counts)
+homelens-pp-cli listing https://www.redfin.com/TX/Austin/.../home/12345
+
+# Apply a profile (first-home / investment / downsize / luxury)
 homelens-pp-cli search "Salem, OR" --profile first-home
 
-# Save a search
-homelens-pp-cli save my-austin "Austin, TX" --max-price 600000
+# Output variants
+homelens-pp-cli search "Austin, TX" --map           # Leaflet map (CDN-loaded)
+homelens-pp-cli search "Austin, TX" --inline-map    # offline-friendly (+160KB)
+homelens-pp-cli search "Austin, TX" --md            # Markdown instead of HTML
+homelens-pp-cli search "Austin, TX" --pdf           # PDF via headless Chrome
+homelens-pp-cli search "Austin, TX" --theme dark    # bloom|modern|classic|minimal|dark
 
-# Re-run a saved search
-homelens-pp-cli search my-austin
-
-# Skip the city resolver (faster if you know the slug)
-homelens-pp-cli search "Vancouver, WA" --slug city/18823/WA/Vancouver
+# Share a report as a public Gist (needs `gh` authenticated)
+homelens-pp-cli share homelens-austin-tx.html
 ```
 
-## Output handling
+## stdout contract
 
-`homelens-pp-cli search` prints **the output HTML file path** to stdout (one line). All progress messages go to stderr.
+`search`, `compare`, `listing` print **one line to stdout: the output file path**. All progress messages go to stderr.
 
-When the user is in a chat context, after running the CLI:
+After invoking, the agent should:
 1. Tell the user the report was generated and give them the path
-2. Offer to summarize the top N matches inline
-3. If the report has > 25 matches, mention pagination and offer "next 25"
+2. Optionally summarize the top 3-5 matches inline (price, address, livability score)
+3. If results exceed `--chunk` (default 25), mention pagination is available
 
-## Error handling
+## Exit codes
 
-| Exit code | Meaning | What to do |
+| Code | Meaning | What to do |
 |---:|---|---|
-| 2 | user error | Re-explain the args or ask user for missing piece |
-| 3 | upstream error | Suggest retry; Redfin/Census/city-data may be down |
-| 4 | rate-limited | Wait 60s and retry |
-| 5 | auth missing | Tell user to set Census key at `~/.config/homelens/config.toml` |
-| 7 | no results | Suggest widening filters |
-| 9 | changes detected | Surface the diff to the user |
+| 0 | ok | proceed |
+| 2 | user error (bad flag, invalid city) | check args, ask user for the missing piece |
+| 3 | upstream error (Redfin/Census/city-data down) | suggest retry; not the user's fault |
+| 4 | rate-limited | wait 60s and retry |
+| 5 | auth missing (Census key bad) | tell user to set Census key (optional — only affects deep-dive) |
+| 7 | no results | suggest widening filters |
+| 9 | changes detected (`watch` only) | surface the new/removed/changed listings to the user |
 
-## Stub features in v0
+## Built-in defaults
 
-Tell the user these are coming in v0.2; do not try to invoke them:
+`min-sqft=1500`, `max-price=$800K`, `min-beds=2`, `min-baths=2`, `types=house+condo+townhouse`, `theme=bloom`, `chunk=25`.
 
-- `compare` (side-by-side city comparison)
-- `watch` (diff-against-last-run)
-- `listing` (single-listing deep dive)
-- `share` (gist upload — workaround: `gh gist create --public <file>`)
-- `report` (PDF / markdown export)
+Built-in profiles: `first-home` (≤$450K), `investment` (condos+multi, sort by $/sqft), `downsize` (≤2500sqft), `luxury` (≥$3000sqft).
 
-## Defaults a new user gets
+## Themes
 
-`min-sqft=1500`, `max-price=$800K`, `min-beds=2`, `min-baths=2`, `types=house+condo+townhouse`, `theme=bloom`, chunk=25.
+`bloom` (default, pink/lavender mobile-first) · `modern` (navy+gold) · `classic` (serif brochure) · `minimal` (B&W) · `dark` (slate+cyan OLED).
 
-Built-in profiles: `first-home`, `investment`, `downsize`, `luxury`.
+## API keys
+
+**No API keys required to start.** Optional: free Census API key (https://api.census.gov/data/key_signup.html) unlocks tract-level deep-dive demographics. Save via `homelens-pp-cli init` or directly in `~/.config/homelens/config.toml`.
+
+## Companion CLIs (optional but auto-detected)
+
+If installed, HomeLens delegates enrichment to:
+- `census-pp-cli` (Geocoder + ACS)
+- `city-data-pp-cli` (ZIP scrape)
+- `osm-amenities-pp-cli` (walkability)
+
+Falls back to inline implementations otherwise. Either way, behavior is identical from a user's perspective.
+
+## MCP tools (for MCP-aware agents)
+
+`homelens-pp-mcp` exposes 4 typed tools — agents calling via MCP don't need to shell out:
+
+- `search` — full search with enrichment
+- `list_searches` — enumerate saved searches
+- `listing` — single-listing metadata (lat/lng, year built, description)
+- `render_html` — render a prior search result to a themed HTML file

@@ -302,7 +302,7 @@ func searchCmd() *cobra.Command {
 	cmd.Flags().StringVar(&flagStatus, "status", "for-sale", "for-sale | sold | pending")
 	cmd.Flags().StringVar(&flagSlug, "slug", "", "Redfin region slug to skip city resolution")
 	cmd.Flags().StringVar(&flagOut, "out", "", "output HTML path (default: homelens-<city>.html)")
-	cmd.Flags().StringVar(&flagTheme, "theme", "", "theme: bloom (other themes stubbed for v0)")
+	cmd.Flags().StringVar(&flagTheme, "theme", "", "theme: bloom (default) | modern | classic | minimal | dark")
 	cmd.Flags().StringVar(&flagProfile, "profile", "", "filter profile name to apply")
 	cmd.Flags().IntVar(&flagChunk, "chunk", 0, "results per page (default 25)")
 	cmd.Flags().IntVar(&flagPage, "page", 1, "page number (1-indexed)")
