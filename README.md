@@ -51,7 +51,7 @@ Configuration lives at `~/.config/homelens/config.toml`. Resolution order:
 4. User config (`~/.config/homelens/config.toml`)
 5. Built-in defaults (lowest)
 
-Built-in defaults: `min-sqft=1500`, `max-price=$800K`, `min-beds=2`, `min-baths=2`, `types=house+condo+townhouse`, `theme=maia`, `chunk=25`.
+Built-in defaults: `min-sqft=1500`, `max-price=$800K`, `min-beds=2`, `min-baths=2`, `types=house+condo+townhouse`, `theme=bloom`, `chunk=25`.
 
 ### Profiles
 
@@ -67,7 +67,7 @@ Tract-level demographics need a free [Census API key](https://api.census.gov/dat
 
 ## Themes
 
-v0 ships **maia** (the lovable mobile-first one). Roadmap themes: modern, classic, minimal, dark.
+v0 ships **bloom** (the lovable mobile-first one). Roadmap themes: modern, classic, minimal, dark.
 
 ## Roadmap
 
@@ -76,7 +76,7 @@ Status as of v0.1:
 | Feature              | Status      | Notes |
 |----------------------|-------------|-------|
 | `search` w/ Vancouver | ✅ working | reproduces 16-listing baseline |
-| Maia theme           | ✅ working   | self-contained HTML |
+| bloom theme           | ✅ working   | self-contained HTML |
 | Config + profiles    | ✅ working   | 4 built-in profiles |
 | Saved searches       | ✅ working   | TOML at `~/.config/homelens/searches/` |
 | MCP server           | 🟡 partial | initialize + list_tools work; tool calls shell out to CLI |

@@ -46,7 +46,7 @@ func BuiltInDefaults() Defaults {
 		MinBaths:  2,
 		Types:     []string{"house", "condo", "townhouse"},
 		Status:    "for-sale",
-		Theme:     "maia",
+		Theme:     "bloom",
 		Chunk:     25,
 		OutputDir: ".",
 	}

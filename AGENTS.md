@@ -40,4 +40,4 @@ Invoke when user says:
 
 ## Defaults
 
-User config at `~/.config/homelens/config.toml`. Built-in: `min-sqft=1500`, `max-price=$800K`, `2+bd/2+ba`, `house+condo+townhouse`, `theme=maia`, `chunk=25`. Profiles: `first-home`, `investment`, `downsize`, `luxury`.
+User config at `~/.config/homelens/config.toml`. Built-in: `min-sqft=1500`, `max-price=$800K`, `2+bd/2+ba`, `house+condo+townhouse`, `theme=bloom`, `chunk=25`. Profiles: `first-home`, `investment`, `downsize`, `luxury`.

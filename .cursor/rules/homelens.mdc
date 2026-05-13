@@ -33,4 +33,4 @@ homelens-pp-cli profile use first-home
 
 ## Defaults
 
-Built-in: min-sqft=1500, max-price=$800K, 2+bd/2+ba, house+condo+townhouse, maia theme. User config at `~/.config/homelens/config.toml`.
+Built-in: min-sqft=1500, max-price=$800K, 2+bd/2+ba, house+condo+townhouse, bloom theme. User config at `~/.config/homelens/config.toml`.

@@ -73,6 +73,6 @@ Tell the user these are coming in v0.2; do not try to invoke them:
 
 ## Defaults a new user gets
 
-`min-sqft=1500`, `max-price=$800K`, `min-beds=2`, `min-baths=2`, `types=house+condo+townhouse`, `theme=maia`, chunk=25.
+`min-sqft=1500`, `max-price=$800K`, `min-beds=2`, `min-baths=2`, `types=house+condo+townhouse`, `theme=bloom`, chunk=25.
 
 Built-in profiles: `first-home`, `investment`, `downsize`, `luxury`.

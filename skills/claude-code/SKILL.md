@@ -50,8 +50,8 @@ After running, tell the user the report path and offer to summarize the top matc
 ## v0 stubs (do not invoke; tell user it's coming)
 
 - `watch`, `compare`, `listing`, `share`, `report` — all stubbed
-- Only the `maia` theme is implemented; other themes will land in v0.2
+- Only the `bloom` theme is implemented; other themes will land in v0.2
 
 ## Defaults
 
-If the user gives only a city, HomeLens uses their `~/.config/homelens/config.toml` defaults (min-sqft=1500, max-price=$800K, 2+bd/2+ba, house+condo+townhouse, theme=maia).
+If the user gives only a city, HomeLens uses their `~/.config/homelens/config.toml` defaults (min-sqft=1500, max-price=$800K, 2+bd/2+ba, house+condo+townhouse, theme=bloom).

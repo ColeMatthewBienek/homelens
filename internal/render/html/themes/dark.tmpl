@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{.Location}} — HomeLens</title>
+<style>
+:root{--bg:#0a0e14;--surface:#141821;--surface-2:#1c2230;--text:#e4e9f0;--text-mute:#7a8499;--accent:#00d4ff;--accent-dim:#0099b8;--border:#252b38}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'JetBrains Mono','SF Mono',Menlo,monospace;background:var(--bg);color:var(--text);line-height:1.6;font-size:14px}
+.container{max-width:1200px;margin:0 auto;padding:0 1.5rem}
+.hero{padding:3rem 0 1.5rem;border-bottom:1px solid var(--border)}
+h1{font-size:2.2rem;font-weight:700;letter-spacing:-.02em;font-family:'Inter',system-ui,sans-serif}
+h1 span{color:var(--accent)}.sub{color:var(--text-mute);margin-top:.5rem}
+.badges{margin-top:1.25rem;display:flex;flex-wrap:wrap;gap:.5rem}
+.badges span{background:var(--surface);border:1px solid var(--border);padding:.3rem .75rem;border-radius:4px;font-size:.8rem;color:var(--text-mute)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem;margin:2rem 0}
+.stat{background:var(--surface);border:1px solid var(--border);padding:1rem 1.25rem;border-radius:6px;border-left:3px solid var(--accent)}
+.stat .v{font-family:'Inter',sans-serif;font-size:1.6rem;font-weight:700;color:var(--accent);line-height:1}
+.stat .l{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-mute);margin-top:.4rem}
+section{padding:1.5rem 0}h2{font-size:1.1rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;margin-bottom:1rem}
+.nbhd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.75rem}
+.nbhd{background:var(--surface);border:1px solid var(--border);padding:1rem 1.25rem;border-radius:6px}
+.nbhd .h{display:flex;justify-content:space-between;font-weight:700;color:var(--accent);font-size:1.05rem;margin-bottom:.5rem}
+.nbhd .s{color:var(--text-mute);font-size:.85rem;line-height:1.7}
+.listings{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:.75rem}
+.listing{background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden;transition:border-color .15s,transform .15s}
+.listing:hover{border-color:var(--accent);transform:translateY(-2px)}
+.photo{aspect-ratio:16/10;background:var(--surface-2);position:relative}
+.photo img{width:100%;height:100%;object-fit:cover;opacity:.9}
+.rank{position:absolute;top:.5rem;left:.5rem;background:var(--bg);color:var(--accent);padding:.2rem .55rem;border-radius:4px;font-size:.75rem;font-weight:700;border:1px solid var(--accent-dim)}
+.body{padding:1rem 1.25rem}
+.price{font-family:'Inter',sans-serif;font-size:1.5rem;font-weight:700;color:var(--accent);letter-spacing:-.01em}
+.addr{font-size:.9rem;margin-top:.25rem}
+.meta{color:var(--text-mute);font-size:.78rem;margin-bottom:.85rem}
+.specs{font-size:.8rem;color:var(--text-mute);padding:.5rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:.75rem}
+.specs strong{color:var(--text);font-family:'Inter',sans-serif}
+.cta{display:flex;gap:.4rem}
+.btn{flex:1;text-align:center;text-decoration:none;padding:.55rem;border-radius:4px;font-size:.8rem;font-weight:600;transition:background .15s}
+.btn-p{background:var(--accent);color:var(--bg)}.btn-p:hover{background:#fff}
+.btn-s{background:var(--surface-2);color:var(--accent);border:1px solid var(--accent-dim)}
+.liv-bar{height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden;margin-bottom:.75rem}
+.liv-fill{height:100%}
+footer{padding:2rem 0;border-top:1px solid var(--border);color:var(--text-mute);text-align:center;font-size:.8rem;margin-top:3rem}
+</style></head><body>
+<header class="hero"><div class="container"><h1><span>$</span> homelens <span>{{.Location}}</span></h1><div class="sub">{{.Count}} matches · {{.Today}}</div>
+<div class="badges"><span>≥ {{.Filters.MinSqFt}} sqft</span><span>≤ ${{fmtK .Filters.MaxPrice}}</span><span>{{.Filters.MinBeds}}+ bed</span><span>{{.Filters.MinBaths}}+ bath</span><span>{{typesList .Filters.Types}}</span></div></div></header>
+<div class="container">
+<div class="stats">
+<div class="stat"><div class="v">{{.Count}}</div><div class="l">Matches</div></div>
+<div class="stat"><div class="v">${{fmtK .Stats.MinPrice}}</div><div class="l">Lowest</div></div>
+<div class="stat"><div class="v">${{fmtK .Stats.MedPrice}}</div><div class="l">Median</div></div>
+<div class="stat"><div class="v">${{fmtK .Stats.MaxPrice}}</div><div class="l">Highest</div></div>
+<div class="stat"><div class="v">{{.Stats.MedSqFt}}</div><div class="l">Median sqft</div></div>
+<div class="stat"><div class="v">{{len .Zips}}</div><div class="l">ZIPs</div></div>
+</div>
+{{if .MapHTML}}<section><h2>Map</h2>{{.MapHTML}}</section>{{end}}
+{{if .Zips}}<section><h2>// Neighborhoods</h2><div class="nbhd-grid">
+{{range .SortedZips}}{{$z:=index $.Zips .}}{{$s:=index $.Livability .}}
+<div class="nbhd"><div class="h"><span>{{.}}</span><span>{{$s}}/100</span></div><div class="s">${{fmtK $z.MedianHouseholdIncome}} income · {{$z.PctBachelorsOrHigher}}% BA+ · {{$z.PovertyPct}}% poverty</div></div>
+{{end}}</div></section>{{end}}
+<section><h2>// Listings</h2><div class="listings">
+{{range $i,$h:=.Homes}}{{$liv:=index $.Livability $h.Zip}}
+<article class="listing"><div class="photo">{{if $h.PhotoURL}}<img src="{{$h.PhotoURL}}" alt="">{{end}}<div class="rank">#{{inc $i}}</div></div>
+<div class="body"><div class="price">${{fmtInt $h.Price.Int}}</div><div class="addr">{{$h.StreetLine.String}}{{unitSuffix $h}}</div><div class="meta">{{$h.City}}, {{$h.State}} {{$h.Zip}}</div>
+<div class="specs"><strong>{{intf $h.Beds}}bd</strong> · <strong>{{floatf $h.Baths}}ba</strong> · <strong>{{fmtInt $h.SqFt.Int}}sf</strong> · <strong>${{$h.PricePerSqFt.Int}}/sf</strong> · built <strong>{{$h.YearBuilt.Int}}</strong></div>
+{{if $liv}}<div class="liv-bar"><div class="liv-fill" style="width:{{$liv}}%;background:{{scoreColor $liv}}"></div></div>{{end}}
+<div class="cta"><a href="https://www.redfin.com{{$h.URL}}" target="_blank" class="btn btn-p">redfin →</a><a href="https://www.google.com/maps/search/?api=1&query={{mapsQuery $h}}" target="_blank" class="btn btn-s">map</a></div></div></article>
+{{end}}</div></section>
+</div><footer>generated {{.Today}} · redfin · census · city-data</footer></body></html>

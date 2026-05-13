@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"os"
 	"sort"
 	"strings"
@@ -11,7 +12,9 @@ import (
 
 	"github.com/ColeMatthewBienek/homelens/internal/citydata"
 	"github.com/ColeMatthewBienek/homelens/internal/config"
+	"github.com/ColeMatthewBienek/homelens/internal/mapview"
 	htmlrender "github.com/ColeMatthewBienek/homelens/internal/render/html"
+	mdrender "github.com/ColeMatthewBienek/homelens/internal/render/md"
 	"github.com/ColeMatthewBienek/homelens/internal/redfin"
 	"github.com/ColeMatthewBienek/homelens/internal/score"
 	"github.com/ColeMatthewBienek/homelens/internal/store"
@@ -45,6 +48,8 @@ func searchCmd() *cobra.Command {
 		flagAll       bool
 		flagJSON      bool
 		flagNoEnrich  bool
+		flagMap       bool
+		flagMarkdown  bool
 	)
 	cmd := &cobra.Command{
 		Use:   "search [city-state | saved-search-name]",
@@ -217,9 +222,13 @@ func searchCmd() *cobra.Command {
 			})
 
 			// Render
+			ext := ".html"
+			if flagMarkdown {
+				ext = ".md"
+			}
 			out := flagOut
 			if out == "" {
-				out = "homelens-" + slugify(location) + ".html"
+				out = "homelens-" + slugify(location) + ext
 			}
 
 			f, err := os.Create(out)
@@ -228,21 +237,33 @@ func searchCmd() *cobra.Command {
 			}
 			defer f.Close()
 
-			err = htmlrender.Render(flagTheme, htmlrender.Data{
-				Location: location,
-				Filters: htmlrender.FiltersView{
-					MinSqFt:  flagMinSqft,
-					MaxPrice: flagMaxPrice,
-					MinBeds:  flagMinBeds,
-					MinBaths: flagMinBaths,
-					Types:    types,
-				},
-				Homes:      homes,
-				Zips:       zips,
-				SortedZips: sortedZips,
-				ZipCity:    zipCity,
-				Livability: livability,
-			}, f)
+			if flagMarkdown {
+				err = mdrender.Render(mdrender.Data{
+					Location: location,
+					Filters: mdrender.Filters{
+						MinSqFt: flagMinSqft, MaxPrice: flagMaxPrice,
+						MinBeds: flagMinBeds, MinBaths: flagMinBaths, Types: types,
+					},
+					Homes: homes, Zips: zips, SortedZips: sortedZips,
+					ZipCity: zipCity, Livability: livability,
+				}, f)
+			} else {
+				var mapHTML template.HTML
+				if flagMap {
+					if mh, mErr := mapview.Build(homes, livability); mErr == nil {
+						mapHTML = mh
+					}
+				}
+				err = htmlrender.Render(flagTheme, htmlrender.Data{
+					Location: location,
+					Filters: htmlrender.FiltersView{
+						MinSqFt: flagMinSqft, MaxPrice: flagMaxPrice,
+						MinBeds: flagMinBeds, MinBaths: flagMinBaths, Types: types,
+					},
+					Homes: homes, Zips: zips, SortedZips: sortedZips,
+					ZipCity: zipCity, Livability: livability, MapHTML: mapHTML,
+				}, f)
+			}
 			if err != nil {
 				return err
 			}
@@ -259,13 +280,15 @@ func searchCmd() *cobra.Command {
 	cmd.Flags().StringVar(&flagStatus, "status", "for-sale", "for-sale | sold | pending")
 	cmd.Flags().StringVar(&flagSlug, "slug", "", "Redfin region slug to skip city resolution")
 	cmd.Flags().StringVar(&flagOut, "out", "", "output HTML path (default: homelens-<city>.html)")
-	cmd.Flags().StringVar(&flagTheme, "theme", "", "theme: maia (other themes stubbed for v0)")
+	cmd.Flags().StringVar(&flagTheme, "theme", "", "theme: bloom (other themes stubbed for v0)")
 	cmd.Flags().StringVar(&flagProfile, "profile", "", "filter profile name to apply")
 	cmd.Flags().IntVar(&flagChunk, "chunk", 0, "results per page (default 25)")
 	cmd.Flags().IntVar(&flagPage, "page", 1, "page number (1-indexed)")
 	cmd.Flags().BoolVar(&flagAll, "all", false, "return all results, no pagination")
 	cmd.Flags().BoolVar(&flagJSON, "json", false, "emit results as JSON to stdout (no HTML)")
 	cmd.Flags().BoolVar(&flagNoEnrich, "no-enrich", false, "skip city-data enrichment (faster, no livability scores)")
+	cmd.Flags().BoolVar(&flagMap, "map", false, "embed an interactive Leaflet map of listings")
+	cmd.Flags().BoolVar(&flagMarkdown, "md", false, "emit Markdown instead of HTML")
 	return cmd
 }
 

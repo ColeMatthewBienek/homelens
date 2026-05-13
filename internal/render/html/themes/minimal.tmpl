@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{.Location}} — HomeLens</title>
+<style>
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#fff;color:#000;line-height:1.6;margin:0;padding:0;font-size:14px}
+.wrap{max-width:760px;margin:0 auto;padding:4rem 2rem 6rem}
+h1{font-size:2rem;font-weight:300;letter-spacing:-.01em;margin-bottom:.25rem}
+.sub{color:#666;font-size:.95rem;margin-bottom:2rem}
+.rule{height:1px;background:#000;margin:2.5rem 0}
+h2{font-size:1.1rem;font-weight:600;text-transform:uppercase;letter-spacing:.15em;margin-bottom:1rem;color:#000}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:.4rem 1rem;font-size:.9rem;margin-bottom:1.5rem}
+.kv dt{color:#666}
+table{width:100%;border-collapse:collapse;font-size:.9rem;margin-bottom:2rem}
+th{text-align:left;padding:.5rem .75rem;border-bottom:2px solid #000;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:.75rem}
+th.r{text-align:right}td{padding:.5rem .75rem;border-bottom:1px solid #e0e0e0}td.r{text-align:right}
+tr:hover{background:#fafafa}
+.listing{padding:1.25rem 0;border-bottom:1px solid #e0e0e0}
+.listing-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.3rem}
+.listing-price{font-size:1.4rem;font-weight:300}
+.listing-rank{color:#999;font-size:.8rem;letter-spacing:.05em}
+.listing-addr{font-size:.95rem;margin-bottom:.4rem}
+.listing-specs{color:#666;font-size:.85rem}
+.listing-link a{color:#000;text-decoration:underline;text-underline-offset:3px}
+.footer{color:#999;font-size:.8rem;text-align:center;margin-top:4rem}
+</style></head><body>
+<div class="wrap">
+<h1>{{.Location}}</h1>
+<div class="sub">{{.Count}} matches · {{.Today}}</div>
+<dl class="kv">
+<dt>Min sqft</dt><dd>{{.Filters.MinSqFt}}</dd>
+<dt>Max price</dt><dd>${{fmtK .Filters.MaxPrice}}K</dd>
+<dt>Beds / baths</dt><dd>{{.Filters.MinBeds}}+ / {{.Filters.MinBaths}}+</dd>
+<dt>Types</dt><dd>{{typesList .Filters.Types}}</dd>
+<dt>Price range</dt><dd>${{fmtK .Stats.MinPrice}}K – ${{fmtK .Stats.MaxPrice}}K (median ${{fmtK .Stats.MedPrice}}K)</dd>
+<dt>Median sqft</dt><dd>{{.Stats.MedSqFt}}</dd>
+</dl>
+{{if .MapHTML}}<div class="rule"></div><h2>Map</h2>{{.MapHTML}}{{end}}
+{{if .Zips}}<div class="rule"></div><h2>Neighborhoods</h2>
+<table><thead><tr><th>ZIP</th><th>City</th><th class="r">Income</th><th class="r">BA+%</th><th class="r">Poverty</th><th class="r">Livability</th></tr></thead><tbody>
+{{range .SortedZips}}{{$z:=index $.Zips .}}{{$s:=index $.Livability .}}
+<tr><td>{{.}}</td><td>{{index $.ZipCity .}}</td><td class="r">${{fmtK $z.MedianHouseholdIncome}}</td><td class="r">{{$z.PctBachelorsOrHigher}}%</td><td class="r">{{$z.PovertyPct}}%</td><td class="r">{{$s}}/100</td></tr>
+{{end}}</tbody></table>{{end}}
+<div class="rule"></div><h2>Listings</h2>
+{{range $i,$h:=.Homes}}{{$liv:=index $.Livability $h.Zip}}
+<div class="listing">
+<div class="listing-head"><div class="listing-price">${{fmtInt $h.Price.Int}}</div><div class="listing-rank">#{{inc $i}}</div></div>
+<div class="listing-addr">{{$h.StreetLine.String}}{{unitSuffix $h}} · {{$h.City}}, {{$h.State}} {{$h.Zip}}</div>
+<div class="listing-specs">{{typeName $h.UIPropertyType}} · {{intf $h.Beds}}bd / {{floatf $h.Baths}}ba · {{fmtInt $h.SqFt.Int}} sqft · ${{$h.PricePerSqFt.Int}}/sqft · Built {{$h.YearBuilt.Int}}{{if $liv}} · Livability {{$liv}}/100{{end}}</div>
+<div class="listing-link"><a href="https://www.redfin.com{{$h.URL}}" target="_blank">→ Redfin</a></div>
+</div>
+{{end}}
+<div class="footer">HomeLens · {{.Today}}</div>
+</div></body></html>

@@ -300,6 +300,8 @@
   <div class="summary-card"><div class="value">{{len .Zips}}</div><div class="label">ZIPs</div></div>
 </div>
 
+{{if .MapHTML}}<section><h2>📍 On the map</h2>{{.MapHTML}}</section>{{end}}
+
 {{if .Zips}}
 <section>
   <h2>✨ Neighborhood vibes</h2>

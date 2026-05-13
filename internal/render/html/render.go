@@ -37,6 +37,7 @@ type Data struct {
 	Livability map[string]int
 	Stats      Stats
 	Count      int
+	MapHTML    template.HTML
 }
 
 type FiltersView struct {
@@ -55,8 +56,8 @@ func Render(theme string, d Data, w io.Writer) error {
 	name := "themes/" + theme + ".tmpl"
 	tmpl, err := template.New(theme + ".tmpl").Funcs(funcMap()).ParseFS(themesFS, name)
 	if err != nil {
-		// Fallback to maia if theme not found
-		tmpl, err = template.New("maia.tmpl").Funcs(funcMap()).ParseFS(themesFS, "themes/maia.tmpl")
+		// Fallback to bloom if theme not found
+		tmpl, err = template.New("bloom.tmpl").Funcs(funcMap()).ParseFS(themesFS, "themes/bloom.tmpl")
 		if err != nil {
 			return err
 		}

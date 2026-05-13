@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{.Location}} — HomeLens</title>
+<style>
+:root{--primary:#1a365d;--primary-light:#2c5282;--accent:#d69e2e;--bg:#f7fafc;--surface:#fff;--text:#1a202c;--text-muted:#4a5568;--border:#e2e8f0}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+.container{max-width:1280px;margin:0 auto;padding:0 2rem}
+.hero{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:4rem 0 5rem}
+.hero h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;letter-spacing:-.03em;margin-bottom:.5rem}
+.hero h1 span{color:var(--accent)}
+.hero p{opacity:.9;margin-bottom:2rem}
+.badges{display:flex;flex-wrap:wrap;gap:.5rem}
+.badges span{background:rgba(255,255,255,.15);padding:.4rem .85rem;border-radius:999px;font-size:.85rem;border:1px solid rgba(255,255,255,.2)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin:-3rem 0 3rem;position:relative;z-index:2}
+.stat{background:var(--surface);border-radius:12px;padding:1.25rem 1.5rem;box-shadow:0 10px 25px -5px rgba(0,0,0,.08);border:1px solid var(--border)}
+.stat .v{font-size:1.875rem;font-weight:800;color:var(--primary);line-height:1}
+.stat .l{font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-top:.35rem}
+section{padding:2rem 0}h2{font-size:1.5rem;color:var(--primary);margin-bottom:1rem}
+.nbhd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+.nbhd{background:var(--surface);border-radius:12px;padding:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid var(--border)}
+.nbhd-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.5rem}
+.nbhd .zip{font-size:1.25rem;font-weight:800;color:var(--primary)}
+.nbhd .city{color:var(--text-muted);font-size:.875rem}
+.bubble{padding:.2rem .6rem;border-radius:8px;color:#fff;font-weight:700}
+.listings{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:1.5rem}
+.listing{background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid var(--border);display:flex;flex-direction:column;transition:transform .15s,box-shadow .2s}
+.listing:hover{transform:translateY(-3px);box-shadow:0 10px 25px -5px rgba(0,0,0,.1)}
+.photo{aspect-ratio:16/10;background:#edf2f7;position:relative}
+.photo img{width:100%;height:100%;object-fit:cover}
+.rank{position:absolute;top:.75rem;left:.75rem;background:rgba(26,54,93,.95);color:#fff;padding:.25rem .65rem;border-radius:999px;font-size:.75rem;font-weight:700}
+.body{padding:1.25rem 1.5rem;flex:1;display:flex;flex-direction:column}
+.price{font-size:1.75rem;font-weight:800;letter-spacing:-.02em}
+.addr{color:var(--text);font-weight:500}.meta{color:var(--text-muted);font-size:.875rem;margin-bottom:1rem}
+.specs{display:flex;gap:1.25rem;padding:.75rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:1rem;text-align:center}
+.specs>div{flex:1}.specs strong{display:block;font-size:1.05rem}.specs small{color:var(--text-muted);font-size:.7rem;text-transform:uppercase}
+.cta{margin-top:auto;display:flex;gap:.6rem}
+.btn{flex:1;text-align:center;text-decoration:none;padding:.65rem 1rem;border-radius:8px;font-weight:600;font-size:.875rem}
+.btn-p{background:var(--primary);color:#fff}.btn-s{background:#edf2f7;color:var(--primary)}
+.liv-bar{height:8px;background:#edf2f7;border-radius:4px;overflow:hidden;margin-bottom:1rem}
+.liv-fill{height:100%}
+footer{background:var(--primary);color:rgba(255,255,255,.85);padding:3rem 0;margin-top:4rem;text-align:center;font-size:.875rem}
+</style></head><body>
+<header class="hero"><div class="container"><h1>Home Search <span>{{.Location}}</span></h1><p>Live snapshot from Redfin · enriched with Census + neighborhood demographics</p>
+<div class="badges"><span>≥ {{.Filters.MinSqFt}} sqft</span><span>≤ ${{fmtK .Filters.MaxPrice}}</span><span>{{.Filters.MinBeds}}+ bed</span><span>{{.Filters.MinBaths}}+ bath</span><span>{{typesList .Filters.Types}}</span></div></div></header>
+<div class="container">
+<div class="stats">
+<div class="stat"><div class="v">{{.Count}}</div><div class="l">Matches</div></div>
+<div class="stat"><div class="v">${{fmtK .Stats.MinPrice}}</div><div class="l">Lowest</div></div>
+<div class="stat"><div class="v">${{fmtK .Stats.MedPrice}}</div><div class="l">Median</div></div>
+<div class="stat"><div class="v">${{fmtK .Stats.MaxPrice}}</div><div class="l">Highest</div></div>
+<div class="stat"><div class="v">{{.Stats.MedSqFt}}</div><div class="l">Median sqft</div></div>
+<div class="stat"><div class="v">{{len .Zips}}</div><div class="l">ZIPs</div></div>
+</div>
+{{if .MapHTML}}<section><h2>Map</h2>{{.MapHTML}}</section>{{end}}
+{{if .Zips}}<section><h2>Neighborhoods by Livability</h2><div class="nbhd-grid">
+{{range .SortedZips}}{{$z:=index $.Zips .}}{{$s:=index $.Livability .}}
+<div class="nbhd"><div class="nbhd-head"><div><div class="zip">{{.}}</div><div class="city">{{index $.ZipCity .}}</div></div><div class="bubble" style="background:{{scoreColor $s}}">{{$s}}/100</div></div>
+<div style="font-size:.875rem;color:var(--text-muted);margin-top:.5rem">${{fmtK $z.MedianHouseholdIncome}} median income · {{$z.PctBachelorsOrHigher}}% bachelor's+ · {{$z.PovertyPct}}% poverty</div></div>
+{{end}}</div></section>{{end}}
+<section><h2>All matches</h2><div class="listings">
+{{range $i,$h:=.Homes}}{{$liv:=index $.Livability $h.Zip}}
+<article class="listing"><div class="photo">{{if $h.PhotoURL}}<img src="{{$h.PhotoURL}}" alt="">{{end}}<div class="rank">#{{inc $i}}</div></div>
+<div class="body"><div class="price">${{fmtInt $h.Price.Int}}</div><div class="addr">{{$h.StreetLine.String}}{{unitSuffix $h}}</div><div class="meta">{{$h.City}}, {{$h.State}} {{$h.Zip}}</div>
+<div class="specs"><div><strong>{{intf $h.Beds}}</strong><small>Beds</small></div><div><strong>{{floatf $h.Baths}}</strong><small>Baths</small></div><div><strong>{{fmtInt $h.SqFt.Int}}</strong><small>Sqft</small></div><div><strong>${{$h.PricePerSqFt.Int}}</strong><small>$/sqft</small></div></div>
+{{if $liv}}<div class="liv-bar"><div class="liv-fill" style="width:{{$liv}}%;background:{{scoreColor $liv}}"></div></div>{{end}}
+<div class="cta"><a href="https://www.redfin.com{{$h.URL}}" target="_blank" class="btn btn-p">Redfin →</a><a href="https://www.google.com/maps/search/?api=1&query={{mapsQuery $h}}" target="_blank" class="btn btn-s">Map</a></div></div></article>
+{{end}}</div></section>
+</div><footer>Generated {{.Today}} · Data: Redfin · US Census · city-data.com</footer></body></html>

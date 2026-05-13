@@ -26,4 +26,4 @@ homelens-pp-cli search my-saved-search-name
 
 ## Defaults
 
-User config at `~/.config/homelens/config.toml`. Built-ins: min-sqft=1500, max-price=$800K, 2+bd/2+ba, house+condo+townhouse, maia theme. Profiles available: first-home, investment, downsize, luxury.
+User config at `~/.config/homelens/config.toml`. Built-ins: min-sqft=1500, max-price=$800K, 2+bd/2+ba, house+condo+townhouse, bloom theme. Profiles available: first-home, investment, downsize, luxury.
