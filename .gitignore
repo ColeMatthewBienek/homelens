@@ -1,0 +1,8 @@
+*.exe
+*.html
+*.pdf
+homelens-*.html
+/dist/
+/bin/
+.DS_Store
+*.test

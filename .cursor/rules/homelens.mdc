@@ -1,0 +1,36 @@
+---
+description: Property search via HomeLens CLI
+globs:
+alwaysApply: false
+---
+
+# HomeLens
+
+When the user asks about homes for sale, real estate, or property searches in a US city, use `homelens-pp-cli`.
+
+## Usage
+
+```bash
+homelens-pp-cli search "Austin, TX"
+homelens-pp-cli search "Boise, ID" --max-price 500000 --min-sqft 1800 --types house,condo
+homelens-pp-cli search my-saved-name
+homelens-pp-cli profile use first-home
+```
+
+## Output
+
+- stdout: HTML report file path
+- stderr: progress
+- Exit codes: 0 ok, 2 user error, 3 upstream, 4 rate-limited, 5 auth missing, 7 no results, 9 changes
+
+## Triggers
+
+"show me properties in X", "homes for sale", "real estate in", "compare cities", "next 25".
+
+## Stubs in v0
+
+`watch`, `compare`, `listing`, `share`, `report` — print informational stubs; tell user these land in v0.2. For `share`, suggest `gh gist create --public <file>`.
+
+## Defaults
+
+Built-in: min-sqft=1500, max-price=$800K, 2+bd/2+ba, house+condo+townhouse, maia theme. User config at `~/.config/homelens/config.toml`.

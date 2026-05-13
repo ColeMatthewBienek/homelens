@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{.Location}} — HomeLens</title>
+<style>
+  :root {
+    --pink: #f7d6e6;
+    --pink-deep: #e8a5c5;
+    --lavender: #e0d5f0;
+    --lavender-deep: #b9a3df;
+    --cream: #fdf8f5;
+    --text: #3b2f4a;
+    --text-soft: #8b7a9a;
+    --good: #7ab87a;
+    --ok: #a3c87a;
+    --mid: #e8c87a;
+    --bad: #e89a7a;
+    --critical: #d97070;
+    --card-shadow: 0 4px 14px rgba(184, 156, 200, 0.15);
+    --card-hover: 0 12px 32px rgba(184, 156, 200, 0.25);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: linear-gradient(180deg, #fdf8f5 0%, #f5ecf2 100%);
+    color: var(--text);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 1.25rem; }
+
+  .hero {
+    text-align: center;
+    padding: 3rem 0 2rem;
+    background: linear-gradient(135deg, var(--pink) 0%, var(--lavender) 100%);
+    border-radius: 0 0 32px 32px;
+    margin-bottom: 2rem;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 6vw, 3.25rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    color: var(--text);
+  }
+  .hero .city { display: block; font-size: 0.55em; font-weight: 600; opacity: 0.7; margin-top: 0.5rem; letter-spacing: 0; }
+  .hero .subtitle {
+    margin-top: 1rem;
+    color: var(--text-soft);
+    font-size: 1rem;
+  }
+  .filter-pills {
+    display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center;
+    margin-top: 1.5rem;
+  }
+  .filter-pills span {
+    background: rgba(255,255,255,0.55);
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text);
+    backdrop-filter: blur(4px);
+  }
+
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 2.5rem;
+  }
+  .summary-card {
+    background: white;
+    border-radius: 20px;
+    padding: 1.1rem 1.25rem;
+    text-align: center;
+    box-shadow: var(--card-shadow);
+  }
+  .summary-card .value {
+    font-size: 1.65rem;
+    font-weight: 800;
+    color: var(--lavender-deep);
+    letter-spacing: -0.02em;
+  }
+  .summary-card .label {
+    font-size: 0.72rem;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.25rem;
+  }
+
+  section { margin-bottom: 2.5rem; }
+  section h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  section .lede {
+    color: var(--text-soft);
+    margin-bottom: 1.25rem;
+    max-width: 60ch;
+  }
+
+  .nbhd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  .nbhd-card {
+    background: white;
+    border-radius: 18px;
+    padding: 1.25rem;
+    box-shadow: var(--card-shadow);
+  }
+  .nbhd-card .head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 0.5rem;
+  }
+  .nbhd-card .zip {
+    font-size: 1.2rem; font-weight: 800; color: var(--text);
+  }
+  .nbhd-card .city-name { font-size: 0.85rem; color: var(--text-soft); }
+  .score-bubble {
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    color: white;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+  .nbhd-card .headline {
+    font-size: 0.92rem;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+  }
+  .nbhd-stats {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 0.85rem;
+    padding-top: 0.85rem; border-top: 1px solid var(--pink);
+    font-size: 0.82rem;
+  }
+  .nbhd-stats > div small { color: var(--text-soft); display: block; }
+  .nbhd-stats > div strong { color: var(--text); font-size: 0.95rem; }
+
+  .listings {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.5rem;
+  }
+  .listing {
+    background: white;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex; flex-direction: column;
+  }
+  .listing:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--card-hover);
+  }
+  .listing-photo {
+    aspect-ratio: 4/3;
+    background: linear-gradient(135deg, var(--pink) 0%, var(--lavender) 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 3rem;
+    position: relative;
+  }
+  .listing-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .listing-rank {
+    position: absolute; top: 0.85rem; left: 0.85rem;
+    background: rgba(255,255,255,0.92);
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .listing-new {
+    position: absolute; top: 0.85rem; right: 0.85rem;
+    background: var(--pink-deep);
+    color: white;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .listing-body { padding: 1.25rem 1.4rem 1.5rem; flex: 1; display: flex; flex-direction: column; }
+  .listing-price {
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .listing-addr {
+    margin-top: 0.4rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .listing-meta {
+    color: var(--text-soft);
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+  .listing-specs {
+    display: flex; gap: 0.75rem;
+    padding: 0.8rem 0;
+    border-top: 1px solid var(--pink);
+    border-bottom: 1px solid var(--pink);
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  .listing-specs > div { flex: 1; }
+  .listing-specs strong { display: block; font-size: 1rem; color: var(--text); }
+  .listing-specs small { color: var(--text-soft); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .listing-extra { font-size: 0.86rem; color: var(--text-soft); line-height: 1.6; margin-bottom: 0.85rem; }
+  .listing-extra strong { color: var(--text); font-weight: 600; }
+  .liv-bar-wrap {
+    margin-bottom: 1rem;
+  }
+  .liv-bar-label {
+    display: flex; justify-content: space-between;
+    font-size: 0.78rem; color: var(--text-soft); margin-bottom: 0.25rem;
+  }
+  .liv-bar {
+    height: 10px;
+    background: #f5ecf2;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .liv-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--pink-deep), var(--lavender-deep));
+  }
+  .listing-cta {
+    margin-top: auto;
+    display: flex; gap: 0.5rem;
+  }
+  .btn {
+    flex: 1;
+    text-align: center;
+    text-decoration: none;
+    padding: 0.7rem 1rem;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    transition: transform 0.1s;
+  }
+  .btn-primary { background: var(--lavender-deep); color: white; }
+  .btn-primary:hover { transform: scale(1.02); }
+  .btn-secondary { background: var(--pink); color: var(--text); }
+  .btn-secondary:hover { transform: scale(1.02); }
+
+  footer {
+    text-align: center;
+    padding: 3rem 0 4rem;
+    color: var(--text-soft);
+    font-size: 0.85rem;
+  }
+  footer .heart { color: var(--pink-deep); }
+
+  @media (max-width: 600px) {
+    .hero { padding: 2rem 0 1.5rem; }
+    .listings { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="container">
+    <h1>HomeLens<span class="city">{{.Location}}</span></h1>
+    <p class="subtitle">{{.Count}} lovely homes · curated just for you 💕</p>
+    <div class="filter-pills">
+      <span>≥ {{.Filters.MinSqFt}} sqft</span>
+      <span>≤ ${{fmtK .Filters.MaxPrice}}</span>
+      <span>{{.Filters.MinBeds}}+ bed</span>
+      <span>{{.Filters.MinBaths}}+ bath</span>
+      <span>{{typesList .Filters.Types}}</span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+<div class="summary">
+  <div class="summary-card"><div class="value">{{.Count}}</div><div class="label">Matches</div></div>
+  <div class="summary-card"><div class="value">${{fmtK .Stats.MinPrice}}</div><div class="label">Lowest</div></div>
+  <div class="summary-card"><div class="value">${{fmtK .Stats.MedPrice}}</div><div class="label">Median</div></div>
+  <div class="summary-card"><div class="value">${{fmtK .Stats.MaxPrice}}</div><div class="label">Highest</div></div>
+  <div class="summary-card"><div class="value">{{.Stats.MedSqFt}}</div><div class="label">Median sqft</div></div>
+  <div class="summary-card"><div class="value">{{len .Zips}}</div><div class="label">ZIPs</div></div>
+</div>
+
+{{if .Zips}}
+<section>
+  <h2>✨ Neighborhood vibes</h2>
+  <p class="lede">Each ZIP gets a Livability score (0–100) — a relative ranking just among the neighborhoods in your search, blending income, education, poverty rate, and home values.</p>
+  <div class="nbhd-grid">
+    {{range .SortedZips}}
+    {{$z := index $.Zips .}}
+    {{$s := index $.Livability .}}
+    <div class="nbhd-card">
+      <div class="head">
+        <div>
+          <div class="zip">{{.}}</div>
+          <div class="city-name">{{index $.ZipCity .}}</div>
+        </div>
+        <div class="score-bubble" style="background: {{scoreColor $s}};">{{$s}}/100</div>
+      </div>
+      <div class="headline">{{scoreLabel $s}}</div>
+      <div class="nbhd-stats">
+        <div><small>Median income</small><strong>${{fmtK $z.MedianHouseholdIncome}}</strong></div>
+        <div><small>Median home</small><strong>${{fmtK $z.MedianHouseValue}}</strong></div>
+        <div><small>Bachelor's+</small><strong>{{$z.PctBachelorsOrHigher}}%</strong></div>
+        <div><small>Poverty</small><strong>{{$z.PovertyPct}}%</strong></div>
+        <div><small>Population</small><strong>{{$z.TotalPopulation}}</strong></div>
+        <div><small>Median age</small><strong>{{$z.MedianAge}}</strong></div>
+      </div>
+    </div>
+    {{end}}
+  </div>
+</section>
+{{end}}
+
+<section>
+  <h2>🏡 Your matches</h2>
+  <p class="lede">Click any card to see the full Redfin listing.</p>
+  <div class="listings">
+    {{range $i, $h := .Homes}}
+    {{$liv := index $.Livability $h.Zip}}
+    <article class="listing">
+      <div class="listing-photo">
+        {{if $h.PhotoURL}}<img src="{{$h.PhotoURL}}" alt="{{$h.StreetLine.String}}" loading="lazy">{{else}}🏠{{end}}
+        <div class="listing-rank">#{{inc $i}}</div>
+        {{if isNew $h}}<div class="listing-new">New</div>{{end}}
+      </div>
+      <div class="listing-body">
+        <div class="listing-price">${{fmtInt $h.Price.Int}}</div>
+        <div class="listing-addr">{{$h.StreetLine.String}}{{unitSuffix $h}}</div>
+        <div class="listing-meta">{{$h.City}}, {{$h.State}} {{$h.Zip}}</div>
+
+        <div class="listing-specs">
+          <div><strong>{{intf $h.Beds}}</strong><small>Beds</small></div>
+          <div><strong>{{floatf $h.Baths}}</strong><small>Baths</small></div>
+          <div><strong>{{fmtInt $h.SqFt.Int}}</strong><small>Sqft</small></div>
+          <div><strong>${{$h.PricePerSqFt.Int}}</strong><small>$/sqft</small></div>
+        </div>
+
+        <div class="listing-extra">
+          <strong>{{typeName $h.UIPropertyType}}</strong> · Built {{$h.YearBuilt.Int}}
+          {{with hoaStr $h}} · HOA {{.}}{{end}}
+          · <strong>{{$h.DOM.Int}}</strong> days on market
+        </div>
+
+        {{if $liv}}
+        <div class="liv-bar-wrap">
+          <div class="liv-bar-label">
+            <span>Livability · ZIP {{$h.Zip}}</span>
+            <strong>{{$liv}}/100</strong>
+          </div>
+          <div class="liv-bar"><div class="liv-fill" style="width:{{$liv}}%"></div></div>
+        </div>
+        {{end}}
+
+        <div class="listing-cta">
+          <a href="https://www.redfin.com{{$h.URL}}" class="btn btn-primary" target="_blank" rel="noopener">View on Redfin →</a>
+          <a href="https://www.google.com/maps/search/?api=1&query={{mapsQuery $h}}" class="btn btn-secondary" target="_blank" rel="noopener">📍 Map</a>
+        </div>
+      </div>
+    </article>
+    {{end}}
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <p>Generated with <span class="heart">♥</span> by HomeLens · {{.Today}}</p>
+  <p style="margin-top:0.4rem;">Data: Redfin · US Census · city-data.com</p>
+</footer>
+
+</body>
+</html>
